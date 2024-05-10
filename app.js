@@ -2,6 +2,7 @@ require('dotenv').config({ path: `${process.cwd()}/.env` });
 const PORT = process.env.APP_PORT || 4000;
 
 const express = require('express');
+const cors = require('cors');
 
 const authRouter = require('./routes/authRoute');
 const inventoryRouter = require('./routes/inventoryRoute');
@@ -14,6 +15,7 @@ const globalErrorHandler = require('./controllers/errorController');
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 app.get('/', (req, res) => {
     res.status(200).json({
