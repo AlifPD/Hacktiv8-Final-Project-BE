@@ -22,13 +22,26 @@ const createNewLoan = catchAsync(async (req, res, next) => {
         throw new ApiError('Return Date can\'t be before the Loan Date', 400);
     }
 
+    if(req.body.quantity>checkIdItem.quantity){
+        throw new ApiError('Quantity of Loan can\'t exceed the quantity of item in inventory', 400);
+    }
+
     const loan = await loans.create({
         idItem: req.body.idItem,
         idUser: req.body.idUser,
         dateLoan: req.body.dateLoan,
         dateReturn: req.body.dateReturn,
-        status: req.body.status,
+        status: 'Sedang Dipinjam',
+        quantity: req.body.quantity,
     });
+
+    await inventory.update({
+        quantity: checkIdItem.quantity - req.body.quantity
+    },{
+        where: {
+            id: checkIdItem.id
+        }
+    })
 
     return res.status(201).json({
         status: 'success',

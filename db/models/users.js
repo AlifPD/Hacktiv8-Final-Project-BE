@@ -12,6 +12,7 @@ const users = sequelize.define('users', {
   },
   userType: {
     type: DataTypes.ENUM('0', '1'),
+    defaultValue: "1",
     allowNull: false,
     validate: {
       notNull: {

@@ -35,6 +35,21 @@ const loans = sequelize.define('loans', {
     type: DataTypes.DATE,
     allowNull: false,
   },
+  quantity: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      notNull: {
+        msg: 'quantity can\'t be null',
+      },
+      notEmpty: {
+        msg: 'quantity can\'t be empty',
+      },
+      isNumeric: {
+        msg: 'quantity must be a number',
+      }
+    },
+  },
   status: {
     type: DataTypes.ENUM('Sedang Dipinjam', 'Belum Dikembalikan', 'Sudah Dikembalikan'),
     allowNull: false,
