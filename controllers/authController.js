@@ -14,9 +14,9 @@ const generateToken = (token) => {
 const signup = catchAsync(async (req, res, next) => {
     const body = req.body;
 
-    if (!['1'].includes(body.userType)) {
-        throw new ApiError('Invalid User Type', 400);
-    }
+    // if (!['1'].includes(body.userType)) {
+    //     throw new ApiError('Invalid User Type', 400);
+    // }
 
     if (body.confirmPassword !== body.password) {
         throw new ApiError('Password and Confirm Password must be the same', 400);
@@ -27,7 +27,6 @@ const signup = catchAsync(async (req, res, next) => {
     }
 
     const newUser = await users.create({
-        userType: body.userType,
         userName: body.userName,
         phoneNumber: body.phoneNumber,
         email: body.email,

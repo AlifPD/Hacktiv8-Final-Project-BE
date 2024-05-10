@@ -1,4 +1,4 @@
-const { authentication } = require('../controllers/authController');
+const { authentication, restrictAccess } = require('../controllers/authController');
 const { createNewLoan, getLoan, deleteLoan } = require('../controllers/loansController');
 
 const router = require('express').Router();

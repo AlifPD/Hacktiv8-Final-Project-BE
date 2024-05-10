@@ -25,6 +25,10 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
       },
+      quantity:{
+        type: Sequelize.INTEGER,
+        allowNull: false
+      },
       status: {
         type: Sequelize.ENUM('Sedang Dipinjam', 'Belum Dikembalikan', 'Sudah Dikembalikan'),
         allowNull: false,
