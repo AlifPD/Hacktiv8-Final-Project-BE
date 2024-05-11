@@ -88,6 +88,16 @@ const inventory = sequelize.define('inventory', {
       },
     },
   },
+  description: {
+    type: DataTypes.TEXT,
+    defaultValue: "",
+    allowNull: false,
+    validate: {
+      notNull: {
+        msg: 'description can\'t be null',
+      },
+    },
+  },
   createdAt: {
     allowNull: false,
     type: DataTypes.DATE
