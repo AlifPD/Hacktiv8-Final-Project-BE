@@ -11,6 +11,7 @@ const createInventoryItem = catchAsync(async (req, res, next) => {
         category: body.category,
         location: body.location,
         isAvailable: body.isAvailable,
+        description : body.description,
         pictureUrl: body.pictureUrl,
     });
 
