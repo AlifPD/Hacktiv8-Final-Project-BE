@@ -17,20 +17,28 @@ const createNewLoan = catchAsync(async (req, res, next) => {
 
     const dateLoan = new Date(req.body.dateLoan);
     const dateReturn = new Date(req.body.dateReturn);
+    const today = new Date();
+
+    if (dateLoan.getFullYear() < today.getFullYear() ||
+        (dateLoan.getFullYear() === today.getFullYear() && dateLoan.getMonth() < today.getMonth()) ||
+        (dateLoan.getFullYear() === today.getFullYear() && dateLoan.getMonth() === today.getMonth() && dateLoan.getDate() < today.getDate())) {
+        throw new ApiError('Loan Date must be after or at least today', 400);
+    }
+
 
     if (dateReturn < dateLoan) {
         throw new ApiError('Return Date can\'t be before the Loan Date', 400);
     }
 
-    if(req.body.quantity>checkIdItem.quantity){
+    if (req.body.quantity > checkIdItem.quantity) {
         throw new ApiError('Quantity of Loan can\'t exceed the quantity of item in inventory', 400);
     }
 
-    if(req.body.quantity == 0){
+    if (req.body.quantity == 0) {
         throw new ApiError('Quantity of Loan can\'t be 0', 400);
     }
 
-    if(req.body.quantity < 0){
+    if (req.body.quantity < 0) {
         throw new ApiError('Quantity of Loan is invalid', 400);
     }
 
@@ -45,7 +53,7 @@ const createNewLoan = catchAsync(async (req, res, next) => {
 
     await inventory.update({
         quantity: checkIdItem.quantity - req.body.quantity
-    },{
+    }, {
         where: {
             id: checkIdItem.id
         }
