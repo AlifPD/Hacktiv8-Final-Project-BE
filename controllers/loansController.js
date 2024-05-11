@@ -26,6 +26,14 @@ const createNewLoan = catchAsync(async (req, res, next) => {
         throw new ApiError('Quantity of Loan can\'t exceed the quantity of item in inventory', 400);
     }
 
+    if(req.body.quantity == 0){
+        throw new ApiError('Quantity of Loan can\'t be 0', 400);
+    }
+
+    if(req.body.quantity < 0){
+        throw new ApiError('Quantity of Loan is invalid', 400);
+    }
+
     const loan = await loans.create({
         idItem: req.body.idItem,
         idUser: req.body.idUser,
