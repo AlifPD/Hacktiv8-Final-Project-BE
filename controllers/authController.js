@@ -13,7 +13,6 @@ const generateToken = (token) => {
 
 const signup = catchAsync(async (req, res, next) => {
     const body = req.body;
-
     // if (!['1'].includes(body.userType)) {
     //     throw new ApiError('Invalid User Type', 400);
     // }
@@ -87,6 +86,26 @@ const login = catchAsync(async (req, res, next) => {
     });
 });
 
+const getDetailUser = catchAsync(async (req, res, next) => {
+    if(!req.query.id) {
+        res.status(201).json({
+            status: 'success',
+            message: 'No ID inserted. Please provide user ID!',
+            data: [{}],
+        });
+    }
+    const result = await users.findByPk(req.query.id);
+    if(!result) {
+        throw new ApiError('User do not exists', 400);
+    }else {
+        return res.status(200).json({
+            status: 'success',
+            message: 'Successfully get detail user data',
+            data: result,
+        })
+    }
+})
+
 const authentication = catchAsync(async (req, res, next) => {
     let token = "";
 
@@ -122,4 +141,4 @@ const restrictAccess = (...userType) => {
     return checkPermission;
 };
 
-module.exports = { signup, login, authentication, restrictAccess };
+module.exports = { signup, login, getDetailUser, authentication, restrictAccess };

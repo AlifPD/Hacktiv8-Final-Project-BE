@@ -7,7 +7,7 @@ const catchAsync = require('../utils/catchAsync');
 const createNewLoan = catchAsync(async (req, res, next) => {
     const checkIdUser = await users.findByPk(req.body.idUser);
     if (!checkIdUser) {
-        throw new ApiError('The User doesn\'t exist', 400);
+        throw new ApiError('The User doesn\'t exist', 400); 
     }
 
     const checkIdItem = await inventory.findByPk(req.body.idItem);

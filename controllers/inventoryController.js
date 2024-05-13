@@ -27,6 +27,7 @@ const getAllInventory = catchAsync(async (req, res, next) => {
 
     // const result = await inventory.findAll({ limit: limit, offset: (limit*page) });
     const result = await inventory.findAll();
+    result.sort((a, b) => a.id - b.id);
 
     return res.status(200).json({
         status: 'success',
