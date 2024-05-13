@@ -11,11 +11,16 @@ const loansRouter = require('./routes/loansRoute');
 const catchAsync = require('./utils/catchAsync');
 const AppError = require('./utils/apiError');
 const globalErrorHandler = require('./controllers/errorController');
+const corsOptions = {
+        origin: 'http://localhost:5173',
+        optionsSuccessStatus: 200,
+        Credentials: true
+}
 
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
 
 app.get('/', (req, res) => {
     res.status(200).json({
