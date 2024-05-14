@@ -87,17 +87,14 @@ const login = catchAsync(async (req, res, next) => {
 });
 
 const getDetailUser = catchAsync(async (req, res, next) => {
-    if(!req.query.id) {
-        res.status(201).json({
-            status: 'success',
-            message: 'No ID inserted. Please provide user ID!',
-            data: [{}],
-        });
+    if (!req.query.id) {
+        throw new ApiError('No ID inserted. Please provide user ID', 400);
     }
+
     const result = await users.findByPk(req.query.id);
-    if(!result) {
+    if (!result) {
         throw new ApiError('User do not exists', 400);
-    }else {
+    } else {
         return res.status(200).json({
             status: 'success',
             message: 'Successfully get detail user data',
