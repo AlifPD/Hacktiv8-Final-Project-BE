@@ -38,11 +38,7 @@ const getAllInventory = catchAsync(async (req, res, next) => {
 
 const getDetailInventory = catchAsync(async (req, res, next) => {
     if (!req.query.id) {
-        res.status(200).json({
-            status: 'success',
-            message: 'Successfully get detail inventory data',
-            data: [{}],
-        });
+        throw new ApiError("Id don\'t exist", 400);
     }
 
     const result = await inventory.findByPk(req.query.id);

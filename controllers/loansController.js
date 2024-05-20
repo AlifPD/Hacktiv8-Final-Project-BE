@@ -7,7 +7,7 @@ const catchAsync = require('../utils/catchAsync');
 const createNewLoan = catchAsync(async (req, res, next) => {
     const checkIdUser = await users.findByPk(req.body.idUser);
     if (!checkIdUser) {
-        throw new ApiError('The User doesn\'t exist', 400); 
+        throw new ApiError('The User doesn\'t exist', 400);
     }
 
     const checkIdItem = await inventory.findByPk(req.body.idItem);
@@ -122,4 +122,45 @@ const deleteLoan = catchAsync(async (req, res, next) => {
     });
 });
 
-module.exports = { createNewLoan, getLoan, deleteLoan };
+const editLoan = catchAsync(async (req, res, next) => {
+    const validStatuses = ['Sedang Dipinjam', 'Belum Dikembalikan', 'Sudah Dikembalikan'];
+
+    if (!req.body.id) {
+        throw new ApiError("No Id provided", 400);
+    }
+
+    let idCheck = await loans.findOne({
+        where: {
+            id: req.body.id
+        }
+    })
+
+    if (!idCheck) {
+        throw new ApiError("Loan Id doesn\'t exist", 400);
+    }
+
+    if (!validStatuses.includes(req.body.status)) {
+        throw new ApiError("New Status invalid", 400);
+    }
+
+    let result = await loans.update({
+        status: req.body.status
+    }, {
+        where: {
+            id: req.body.id
+        },
+        returning: true,
+    });
+
+    if (!result) {
+        throw new ApiError("Loans does not exists or have been deleted", 400);
+    }
+
+    return res.status(200).json({
+        status: 'success',
+        message: 'Successfully update loan item',
+        data: result,
+    });
+})
+
+module.exports = { createNewLoan, getLoan, deleteLoan, editLoan };
