@@ -10,7 +10,7 @@ const createInventoryItem = catchAsync(async (req, res, next) => {
         quantity: body.quantity,
         category: body.category,
         location: body.location,
-        isAvailable: body.isAvailable,
+        isAvailable: true,
         description : body.description,
         pictureUrl: body.pictureUrl,
     });
@@ -61,7 +61,7 @@ const getDetailInventory = catchAsync(async (req, res, next) => {
 const deleteInventoryItem = catchAsync(async (req, res, next) => {
     const result = await inventory.destroy({
         where: {
-            id: req.body.id
+            id: req.query.id
         },
         returning: true,
     });
