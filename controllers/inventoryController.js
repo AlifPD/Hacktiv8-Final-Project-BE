@@ -77,4 +77,30 @@ const deleteInventoryItem = catchAsync(async (req, res, next) => {
     });
 });
 
-module.exports = { createInventoryItem, getAllInventory, getDetailInventory, deleteInventoryItem };
+const editInventoryItem = catchAsync(async (req, res, next) => {
+    const result = await inventory.update({
+        itemName: req.body.itemName,
+        quantity: req.body.quantity,
+        category: req.body.category,
+        location: req.body.location,
+        description : req.body.description,
+        pictureUrl: req.body.pictureUrl,
+    }, {
+        where: {
+            id: req.query.id
+        },
+        returning: true,
+    });
+
+    if (!result) {
+        throw new ApiError('Data don\'t exists or Already been deleted', 400);
+    }
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Successfully edit inventaris item',
+        data: result,
+    });
+});
+
+module.exports = { createInventoryItem, getAllInventory, getDetailInventory, deleteInventoryItem, editInventoryItem };
