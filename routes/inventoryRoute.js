@@ -9,6 +9,6 @@ router.route('/detail/all').get(authentication, getAllInventory);
 
 router.route('/detail').get(authentication, getDetailInventory);
 
-router.route('/delete').get(authentication, restrictAccess('0'), deleteInventoryItem);
+router.route('/delete').delete(authentication, restrictAccess('0'), deleteInventoryItem);
 
 module.exports = router;
