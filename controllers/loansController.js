@@ -106,7 +106,7 @@ const getLoan = catchAsync(async (req, res, next) => {
 const deleteLoan = catchAsync(async (req, res, next) => {
     const result = await loans.destroy({
         where: {
-            id: req.body.id
+            id: req.query.id
         },
         returning: true,
     });
