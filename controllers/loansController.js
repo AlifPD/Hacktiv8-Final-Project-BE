@@ -124,14 +124,18 @@ const deleteLoan = catchAsync(async (req, res, next) => {
 
 const editLoan = catchAsync(async (req, res, next) => {
     const validStatuses = ['Sedang Dipinjam', 'Belum Dikembalikan', 'Sudah Dikembalikan'];
+    const checkIdItem = await inventory.findByPk(req.body.idItem);
+    if (!checkIdItem) {
+        throw new ApiError('The Item doesn\'t exist', 400);
+    }
 
-    if (!req.body.id) {
+    if (!req.query.id) {
         throw new ApiError("No Id provided", 400);
     }
 
     let idCheck = await loans.findOne({
         where: {
-            id: req.body.id
+            id: req.query.id
         }
     })
 
@@ -144,13 +148,26 @@ const editLoan = catchAsync(async (req, res, next) => {
     }
 
     let result = await loans.update({
-        status: req.body.status
+        idItem : req.body.idItem, 
+        status: req.body.status,
+        quantity: req.body.quantity
     }, {
         where: {
-            id: req.body.id
+            id: req.query.id
         },
         returning: true,
     });
+
+
+    if(req.body.status === 'Sudah Dikembalikan'){
+        await inventory.update({
+            quantity: checkIdItem.quantity + req.body.quantity
+        }, {
+            where: {
+                id: checkIdItem.id
+            }
+        })
+    }
 
     if (!result) {
         throw new ApiError("Loans does not exists or have been deleted", 400);
