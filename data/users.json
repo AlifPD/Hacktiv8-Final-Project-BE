@@ -1,0 +1,16 @@
+[
+    {
+        "userType": "0",
+        "userName":"admintest1",
+        "email":"admintest1@mail.com",
+        "password":"admintest1111",
+        "phoneNumber":"081234565677"
+    },
+    {
+        "userType": "1",
+        "userName":"usertest1",
+        "email":"usertest1@mail.com",
+        "password":"usertest1111",
+        "phoneNumber":"08953545631"
+    }
+]
