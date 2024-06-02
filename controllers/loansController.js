@@ -3,6 +3,7 @@ const inventory = require('../db/models/inventory');
 const users = require('../db/models/users');
 const ApiError = require('../utils/apiError');
 const catchAsync = require('../utils/catchAsync');
+const db = require('../config/database.js');
 
 const createNewLoan = catchAsync(async (req, res, next) => {
     const checkIdUser = await users.findByPk(req.body.idUser);
@@ -67,40 +68,91 @@ const createNewLoan = catchAsync(async (req, res, next) => {
 });
 
 const getLoan = catchAsync(async (req, res, next) => {
+    const { limit, page } = req.query;
     let result = null;
+    let totalData;
 
-    if (req.user.userType === '0') {
-        result = await loans.findAll({
-            include: [{
-                model: users,
-                attributes: { exclude: ['password', 'createdAt', 'updatedAt', 'deletedAt'] },
-            }, {
-                model: inventory,
-                attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] },
-            }],
+    if (limit && page) {
+        if (req.user.userType === '0') {
+            let queryCount = `SELECT COUNT(*) as total FROM loans`;
+
+            result = await loans.findAll({
+                include: [{
+                    model: users,
+                    attributes: { exclude: ['password', 'createdAt', 'updatedAt', 'deletedAt'] },
+                }, {
+                    model: inventory,
+                    attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] },
+                }],
+                limit: limit,
+                offset: (page - 1) * limit,
+            });
+            totalData = await db.query(queryCount, { type: db.QueryTypes.SELECT });
+        } else {
+            let queryCount = `SELECT COUNT(*) as total FROM loans WHERE loans."idUser" = ${req.user.id}`;
+            
+            result = await loans.findAll({
+                where: { idUser: req.user.id },
+                include: [{
+                    model: users,
+                    attributes: { exclude: ['password', 'createdAt', 'updatedAt', 'deletedAt'] },
+                }, {
+                    model: inventory,
+                    attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] },
+                }],
+                limit: limit,
+                offset: (page - 1) * limit,
+            });
+            totalData = await db.query(queryCount, { type: db.QueryTypes.SELECT });
+        }
+
+        if (!result) {
+            throw new ApiError('No Loan Data Existed', 400);
+        }
+    
+        res.status(200).json({
+            status: 'success',
+            message: `Successfully get all loans, page ${page}`,
+            data: {
+                total: totalData[0].total,
+                result: result,
+            },
         });
     } else {
-        result = await loans.findAll({
-            where: { idUser: req.user.id },
-            include: [{
-                model: users,
-                attributes: { exclude: ['password', 'createdAt', 'updatedAt', 'deletedAt'] },
-            }, {
-                model: inventory,
-                attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] },
-            }],
+        if (req.user.userType === '0') {
+            result = await loans.findAll({
+                include: [{
+                    model: users,
+                    attributes: { exclude: ['password', 'createdAt', 'updatedAt', 'deletedAt'] },
+                }, {
+                    model: inventory,
+                    attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] },
+                }],
+            });
+        } else {
+            result = await loans.findAll({
+                where: { idUser: req.user.id },
+                include: [{
+                    model: users,
+                    attributes: { exclude: ['password', 'createdAt', 'updatedAt', 'deletedAt'] },
+                }, {
+                    model: inventory,
+                    attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] },
+                }],
+            });
+        }
+
+        if (!result) {
+            throw new ApiError('No Loan Data Existed', 400);
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Successfully get all loans',
+            data: result,
+            total: result.length
         });
     }
-
-    if (!result) {
-        throw new ApiError('No Loan Data Existed', 400);
-    }
-
-    res.status(200).json({
-        status: 'success',
-        message: 'Successfully get all loans',
-        data: result,
-    });
 });
 
 const deleteLoan = catchAsync(async (req, res, next) => {
@@ -148,7 +200,7 @@ const editLoan = catchAsync(async (req, res, next) => {
     }
 
     let result = await loans.update({
-        idItem : req.body.idItem, 
+        idItem: req.body.idItem,
         status: req.body.status,
         quantity: req.body.quantity
     }, {
@@ -159,7 +211,7 @@ const editLoan = catchAsync(async (req, res, next) => {
     });
 
 
-    if(req.body.status === 'Sudah Dikembalikan'){
+    if (req.body.status === 'Sudah Dikembalikan') {
         await inventory.update({
             quantity: checkIdItem.quantity + req.body.quantity
         }, {

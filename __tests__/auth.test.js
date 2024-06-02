@@ -12,7 +12,7 @@ const generateToken = (token) => {
 }
 
 beforeAll(async () => {
-    const userData = require("../data/users.json");
+    const userData = require("../data/users_test.json");
 
     userData.forEach((val) => {
         val.createdAt = new Date();
