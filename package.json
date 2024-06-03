@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest --coverage --detectOpenHandles --forceExit --runInBand",
     "start:dev:local": "nodemon app.js",
-    "start:dev": "pm2 start app.js"
+    "start:dev": "pm2 start app.js",
+    "start:prod": "pm2 start app.js"
   },
   "repository": {
     "type": "git",
