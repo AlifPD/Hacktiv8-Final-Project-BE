@@ -4,6 +4,7 @@ const users = require('../db/models/users');
 const ApiError = require('../utils/apiError');
 const catchAsync = require('../utils/catchAsync');
 const db = require('../config/database.js');
+const { Op } = require("sequelize");
 
 const createNewLoan = catchAsync(async (req, res, next) => {
     const checkIdUser = await users.findByPk(req.body.idUser);
@@ -68,9 +69,15 @@ const createNewLoan = catchAsync(async (req, res, next) => {
 });
 
 const getLoan = catchAsync(async (req, res, next) => {
-    const { limit, page } = req.query;
+    const { limit, page, search } = req.query;
     let result = null;
     let totalData;
+    let searchQuery = {};
+
+    if (search !== '' && typeof search !== 'undefined'){
+        searchQuery.where = {'itemName':{}}
+        searchQuery.where['itemName'] = {[Op.iLike]:`%${search}%`}
+    }
 
     if (limit && page) {
         if (req.user.userType === '0') {
@@ -83,6 +90,7 @@ const getLoan = catchAsync(async (req, res, next) => {
                 }, {
                     model: inventory,
                     attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] },
+                    where: searchQuery.where
                 }],
                 limit: limit,
                 offset: (page - 1) * limit,
@@ -90,7 +98,7 @@ const getLoan = catchAsync(async (req, res, next) => {
             totalData = await db.query(queryCount, { type: db.QueryTypes.SELECT });
         } else {
             let queryCount = `SELECT COUNT(*) as total FROM loans WHERE loans."idUser" = ${req.user.id}`;
-            
+
             result = await loans.findAll({
                 where: { idUser: req.user.id },
                 include: [{
@@ -99,6 +107,7 @@ const getLoan = catchAsync(async (req, res, next) => {
                 }, {
                     model: inventory,
                     attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] },
+                    where: searchQuery.where
                 }],
                 limit: limit,
                 offset: (page - 1) * limit,
@@ -109,7 +118,7 @@ const getLoan = catchAsync(async (req, res, next) => {
         if (!result) {
             throw new ApiError('No Loan Data Existed', 400);
         }
-    
+
         res.status(200).json({
             status: 'success',
             message: `Successfully get all loans, page ${page}`,
@@ -127,6 +136,7 @@ const getLoan = catchAsync(async (req, res, next) => {
                 }, {
                     model: inventory,
                     attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] },
+                    where: searchQuery.where
                 }],
             });
         } else {
@@ -138,6 +148,7 @@ const getLoan = catchAsync(async (req, res, next) => {
                 }, {
                     model: inventory,
                     attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] },
+                    where: searchQuery.where
                 }],
             });
         }
@@ -149,8 +160,7 @@ const getLoan = catchAsync(async (req, res, next) => {
         res.status(200).json({
             status: 'success',
             message: 'Successfully get all loans',
-            data: result,
-            total: result.length
+            data: result
         });
     }
 });

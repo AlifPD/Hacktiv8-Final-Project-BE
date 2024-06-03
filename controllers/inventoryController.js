@@ -2,6 +2,7 @@ const inventory = require('../db/models/inventory');
 const ApiError = require('../utils/apiError');
 const catchAsync = require('../utils/catchAsync');
 const db = require('../config/database.js');
+const { Op } = require("sequelize");
 
 const createInventoryItem = catchAsync(async (req, res, next) => {
     const body = req.body;
@@ -23,15 +24,38 @@ const createInventoryItem = catchAsync(async (req, res, next) => {
 });
 
 const getAllInventory = catchAsync(async (req, res, next) => {
-    const { limit, page } = req.query;
+    const { limit, page, sort, sort_stock, search } = req.query;
     let result = [];
     let totalData;
+    let searchQuery = {};
+    let order;
 
     if (limit && page) {
-        console.log("LIMIT >>> ", limit, " PAGE >>> ", page);
-
-        let query = `SELECT * FROM inventory ORDER BY inventory."id" ASC LIMIT ${limit} OFFSET ${(page - 1) * limit}`;
+        let query = `SELECT * FROM inventory`;
         let queryCount = `SELECT COUNT(*) as total FROM inventory`;
+        
+        if (search !== '' && typeof search !== 'undefined'){
+            query += ` WHERE inventory."itemName" ILIKE '%${search}%'`
+        }
+
+        if (sort !== '' && typeof sort !== 'undefined') {
+            if (sort == 'DESC') {
+                query += ` ORDER BY inventory."itemName" DESC`
+            } else if (sort == 'ASC') {
+                query += ` ORDER BY inventory."itemName" ASC`
+            }
+        }
+
+        if (sort_stock !== '' && typeof sort_stock !== 'undefined') {
+            if (sort_stock == 'DESC') {
+                query += ` ORDER BY inventory."quantity" DESC`
+            } else if (sort_stock == 'ASC') {
+                query += ` ORDER BY inventory."quantity" ASC`
+            }
+        }
+
+
+        query += ` LIMIT ${limit} OFFSET ${(page - 1) * limit}`;
 
         result = await db.query(query, { type: db.QueryTypes.SELECT });
         totalData = await db.query(queryCount, { type: db.QueryTypes.SELECT });
@@ -45,8 +69,31 @@ const getAllInventory = catchAsync(async (req, res, next) => {
             },
         });
     } else {
-        result = await inventory.findAll();
-        result.sort((a, b) => a.id - b.id);
+        if (search !== '' && typeof search !== 'undefined'){
+            searchQuery.where = {'itemName':{}}
+            searchQuery.where['itemName'] = {[Op.iLike]:`%${search}%`}
+        }
+        
+        if (sort !== '' && typeof sort !== 'undefined') {
+            if (sort == 'DESC') {
+                order = [['itemName', 'DESC']];
+            } else if (sort == 'ASC') {
+                order = [['itemName', 'ASC']];
+            }
+        }
+
+        if (sort_stock !== '' && typeof sort_stock !== 'undefined') {
+            if (sort_stock == 'DESC') {
+                order = [['quantity', 'DESC']];
+            } else if (sort_stock == 'ASC') {
+                order = [['quantity', 'ASC']];
+            }
+        }
+
+        result = await inventory.findAll({
+            where: searchQuery.where,
+            order: order
+        });
 
         return res.status(200).json({
             status: 'success',
