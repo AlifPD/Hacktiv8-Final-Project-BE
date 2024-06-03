@@ -1,6 +1,7 @@
 const inventory = require('../db/models/inventory');
 const ApiError = require('../utils/apiError');
 const catchAsync = require('../utils/catchAsync');
+const db = require('../config/database.js');
 
 const createInventoryItem = catchAsync(async (req, res, next) => {
     const body = req.body;
@@ -10,8 +11,7 @@ const createInventoryItem = catchAsync(async (req, res, next) => {
         quantity: body.quantity,
         category: body.category,
         location: body.location,
-        isAvailable: true,
-        description : body.description,
+        description: body.description,
         pictureUrl: body.pictureUrl,
     });
 
@@ -23,17 +23,37 @@ const createInventoryItem = catchAsync(async (req, res, next) => {
 });
 
 const getAllInventory = catchAsync(async (req, res, next) => {
-    // const { limit = 20, page = 1 } = req.query;
+    const { limit, page } = req.query;
+    let result = [];
+    let totalData;
 
-    // const result = await inventory.findAll({ limit: limit, offset: (limit*page) });
-    const result = await inventory.findAll();
-    result.sort((a, b) => a.id - b.id);
+    if (limit && page) {
+        console.log("LIMIT >>> ", limit, " PAGE >>> ", page);
 
-    return res.status(200).json({
-        status: 'success',
-        message: 'Successfully get all inventory data',
-        data: result,
-    });
+        let query = `SELECT * FROM inventory ORDER BY inventory."id" ASC LIMIT ${limit} OFFSET ${(page - 1) * limit}`;
+        let queryCount = `SELECT COUNT(*) as total FROM inventory`;
+
+        result = await db.query(query, { type: db.QueryTypes.SELECT });
+        totalData = await db.query(queryCount, { type: db.QueryTypes.SELECT });
+
+        return res.status(200).json({
+            status: 'success',
+            message: `Successfully get all inventory data, page: ${page}`,
+            data: {
+                total: totalData[0].total,
+                result: result,
+            },
+        });
+    } else {
+        result = await inventory.findAll();
+        result.sort((a, b) => a.id - b.id);
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'Successfully get all inventory data',
+            data: result,
+        });
+    }
 });
 
 const getDetailInventory = catchAsync(async (req, res, next) => {
@@ -79,7 +99,7 @@ const editInventoryItem = catchAsync(async (req, res, next) => {
         quantity: req.body.quantity,
         category: req.body.category,
         location: req.body.location,
-        description : req.body.description,
+        description: req.body.description,
         pictureUrl: req.body.pictureUrl,
     }, {
         where: {

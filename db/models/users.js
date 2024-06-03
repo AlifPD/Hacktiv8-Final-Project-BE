@@ -76,7 +76,7 @@ const users = sequelize.define('users', {
   }, confirmPassword: {
     type: DataTypes.VIRTUAL,
     set(value) {
-      const hashPassword = bcrypt.hashSync(value, 10);
+      const hashPassword = bcrypt.hashSync(value, bcrypt.genSaltSync(10));
       this.setDataValue('password', hashPassword);
     }
   },

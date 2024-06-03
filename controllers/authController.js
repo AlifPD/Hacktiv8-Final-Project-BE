@@ -34,7 +34,7 @@ const signup = catchAsync(async (req, res, next) => {
     });
 
     if (!newUser) {
-        throw new ApiError('Failed to create new user', 400);
+        throw new ApiError('Failed to create new user', 500);
     }
 
     const result = newUser.toJSON();
@@ -92,6 +92,7 @@ const getDetailUser = catchAsync(async (req, res, next) => {
     }
 
     const result = await users.findByPk(req.query.id);
+    
     if (!result) {
         throw new ApiError('User do not exists', 400);
     } else {
@@ -118,7 +119,7 @@ const authentication = catchAsync(async (req, res, next) => {
     const userByToken = await users.findByPk(tokenDetail.id);
 
     if (!userByToken) {
-        throw new ApiError('User do not exists', 400);
+        throw new ApiError('Failed Authenticating, User do not exists', 400);
     }
 
     req.user = userByToken;

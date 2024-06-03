@@ -9,7 +9,7 @@ const inventoryRouter = require('./routes/inventoryRoute');
 const loansRouter = require('./routes/loansRoute');
 
 const catchAsync = require('./utils/catchAsync');
-const AppError = require('./utils/apiError');
+const ApiError = require('./utils/apiError');
 const globalErrorHandler = require('./controllers/errorController');
 const corsOptions = {
         origin: 'http://localhost:5173',
@@ -34,11 +34,15 @@ app.use('/api/inventory', inventoryRouter);
 app.use('/api/loans', loansRouter);
 
 app.use('*', catchAsync(async () => {
-    throw new AppError('Error, Route Not Found', 404);
+    throw new ApiError('Error, Route Not Found', 404);
 }));
 
 app.use(globalErrorHandler);
 
-app.listen(PORT, () => {
-    console.log(`SERVER RUNNING -> ${PORT}`);
-});
+if(process.env.NODE_ENV !== 'test'){
+    app.listen(PORT, () => {
+        console.log(`SERVER RUNNING -> ${PORT}`);
+    });
+}
+
+module.exports = app;
