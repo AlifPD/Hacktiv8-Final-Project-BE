@@ -1,10 +1,8 @@
 require('dotenv').config({ path: `${process.cwd()}/.env` });
-const PORT = process.env.APP_PORT || 4000;
 
 const express = require('express');
 const cors = require('cors');
 var cron = require('node-cron');
-const loans = require('./db/models/loans');
 
 const authRouter = require('./routes/authRoute');
 const inventoryRouter = require('./routes/inventoryRoute');
@@ -13,45 +11,56 @@ const loansRouter = require('./routes/loansRoute');
 const catchAsync = require('./utils/catchAsync');
 const ApiError = require('./utils/apiError');
 const globalErrorHandler = require('./controllers/errorController');
+
+const loans = require('./db/models/loans');
+
+const PORT = process.env.APP_PORT || 4000;
 const corsOptions = {
-    origin: 'http://localhost:5173',
+    origin: function (origin, callback) {
+        if (!origin) {
+            return callback(null, true);
+        }
+        return callback(null, true);
+    },
     optionsSuccessStatus: 200,
-    Credentials: true
+    credentials: true
 }
-
-
 const app = express();
+
 app.use(express.json());
 app.use(cors(corsOptions));
 
-// cron.schedule('0 0 * * *', async () => {
-//     console.log("HIT MIDNIGHT");
-//     let loansData = await loans.findAll({
-//         where: {
-//             deletedAt: null,
-//         }
-//     });
+cron.schedule('0 0 * * *', async () => {
+    console.log("HIT MIDNIGHT");
+    let loansData = await loans.findAll({
+        where: {
+            deletedAt: null,
+        }
+    });
 
-//     loansData.forEach(async (value) => {
-//         let result = await loans.update({
-//             status: value.status
-//         });
-//     });
+    const today = new Date();
 
-//     // let result = await loans.update({
-//     //     idItem: req.body.idItem,
-//     //     status: req.body.status,
-//     //     quantity: req.body.quantity
-//     // }, {
-//     //     where: {
-//     //         id: req.query.id
-//     //     },
-//     //     returning: true,
-//     // });
-// }, {
-//     scheduled: true,
-//     timezone: "Asia/Jakarta"
-// });
+    loansData.forEach(async (value, index) => {
+        // console.log(`ID ${value.id}, VALUE ${value.status}, TYPEOF ${value.status}, ISTRUE ${value.status == 'Sedang Dipinjam'}, DATE RETURN ${value.dateReturn}`);
+        if (value.dateReturn.getFullYear() < today.getFullYear() ||
+            (value.dateReturn.getFullYear() === today.getFullYear() && value.dateReturn.getMonth() < today.getMonth()) ||
+            (value.dateReturn.getFullYear() === today.getFullYear() && value.dateReturn.getMonth() === today.getMonth() && value.dateReturn.getDate() < today.getDate())) {
+            if (value.status == 'Sedang Dipinjam') {
+                await loans.update({
+                    status: "Belum Dikembalikan"
+                }, {
+                    where: {
+                        id: value.id
+                    },
+                    returning: true,
+                });
+            }
+        }
+    });
+}, {
+    scheduled: true,
+    timezone: "Asia/Jakarta"
+});
 
 app.get('/', (req, res) => {
     res.status(200).json({
