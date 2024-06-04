@@ -78,8 +78,8 @@ const getLoan = catchAsync(async (req, res, next) => {
     let order = [['id', 'ASC']];
 
     searchQuery.where['deletedAt'] = { [Op.is]: null };
-    if (search !== '' && typeof search !== 'undefined'){
-        searchQuery.where['itemName'] = {[Op.iLike]:`%${search}%`}
+    if (search !== '' && typeof search !== 'undefined') {
+        searchQuery.where['itemName'] = { [Op.iLike]: `%${search}%` }
     }
 
     if (limit && page) {
@@ -193,60 +193,62 @@ const deleteLoan = catchAsync(async (req, res, next) => {
 
 const editLoan = catchAsync(async (req, res, next) => {
     const validStatuses = ['Sedang Dipinjam', 'Belum Dikembalikan', 'Sudah Dikembalikan'];
-    const checkIdItem = await inventory.findByPk(req.body.idItem);
+    const { idItem, quantity, status } = req.body;
+    const idPinjaman = req.query.id;
 
-    if (!checkIdItem) {
-        throw new ApiError('The Item doesn\'t exist', 400);
-    }
+    if (!status) {
+        throw new ApiError("No Status provided", 400);
+    };
 
-    if (!req.query.id) {
-        throw new ApiError("No Id provided", 400);
-    }
-
-    let idCheck = await loans.findOne({
-        where: {
-            id: req.query.id
-        }
-    })
-
-    if (!idCheck) {
-        throw new ApiError("Loan Id doesn\'t exist", 400);
-    }
-
-    if (!validStatuses.includes(req.body.status)) {
+    if (!validStatuses.includes(status)) {
         throw new ApiError("New Status invalid", 400);
-    }
+    };
+
+    if (!idPinjaman) {
+        throw new ApiError("No Id provided", 400);
+    };
+
+    let checkLoan = await loans.findOne({
+        where: {
+            id: idPinjaman
+        }
+    });
+    if (!checkLoan) {
+        throw new ApiError("Loan Id doesn\'t exist", 400);
+    };
+
+    const checkItem = await inventory.findByPk(idItem ? idItem : checkLoan.idItem);
+    if (!checkItem) {
+        throw new ApiError('The Item doesn\'t exist', 400);
+    };
 
     let result = await loans.update({
-        idItem: req.body.idItem,
-        status: req.body.status,
-        quantity: req.body.quantity
+        status: status,
     }, {
         where: {
-            id: req.query.id
+            id: idPinjaman,
         },
         returning: true,
     });
-
-    if (req.body.status === 'Sudah Dikembalikan') {
-        await inventory.update({
-            quantity: checkIdItem.quantity + req.body.quantity
-        }, {
-            where: {
-                id: checkIdItem.id
-            }
-        })
-    }
-
     if (!result) {
         throw new ApiError("Loans does not exists or have been deleted", 400);
-    }
+    };
+
+    if (result && status == 'Sudah Dikembalikan') {
+        await inventory.update({
+            quantity: checkItem.quantity + checkLoan.quantity
+        }, {
+            where: {
+                id: idItem,
+            }
+        })
+    };
 
     return res.status(200).json({
         status: 'success',
         message: 'Successfully update loan item',
         data: result,
     });
-})
+});
 
 module.exports = { createNewLoan, getLoan, deleteLoan, editLoan };
