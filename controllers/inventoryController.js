@@ -27,16 +27,21 @@ const getAllInventory = catchAsync(async (req, res, next) => {
     const { limit, page, sort, sort_stock, search } = req.query;
     let result = [];
     let totalData;
-    let searchQuery = {};
+    let searchQuery = {
+        where: {}
+    };
     let order;
+    let sortDefault = [['id', 'ASC']];
 
     if (limit && page) {
         let query = `SELECT * FROM inventory`;
-        let queryCount = `SELECT COUNT(*) as total FROM inventory`;
-        
-        if (search !== '' && typeof search !== 'undefined'){
-            query += ` WHERE inventory."itemName" ILIKE '%${search}%'`
+        let queryCount = `SELECT COUNT(*) as total FROM inventory WHERE inventory."deletedAt" IS NULL`;
+
+        if (search !== '' && typeof search !== 'undefined') {
+            query += ` WHERE inventory."itemName" ILIKE '%${search}%'AND inventory."deletedAt" IS NULL`
         }
+
+        query += ` WHERE inventory."deletedAt" IS NULL`;
 
         if (sort !== '' && typeof sort !== 'undefined') {
             if (sort == 'DESC') {
@@ -44,6 +49,8 @@ const getAllInventory = catchAsync(async (req, res, next) => {
             } else if (sort == 'ASC') {
                 query += ` ORDER BY inventory."itemName" ASC`
             }
+        } else {
+            query += ` ORDER BY inventory."id" ASC`
         }
 
         if (sort_stock !== '' && typeof sort_stock !== 'undefined') {
@@ -52,10 +59,11 @@ const getAllInventory = catchAsync(async (req, res, next) => {
             } else if (sort_stock == 'ASC') {
                 query += ` ORDER BY inventory."quantity" ASC`
             }
+        } else {
+            query += ` ORDER BY inventory."id" ASC`
         }
 
-
-        query += ` LIMIT ${limit} OFFSET ${(page - 1) * limit}`;
+        query += `WHERE inventory."deletedAt" = 'null'  LIMIT ${limit} OFFSET ${(page - 1) * limit}`;
 
         result = await db.query(query, { type: db.QueryTypes.SELECT });
         totalData = await db.query(queryCount, { type: db.QueryTypes.SELECT });
@@ -69,17 +77,20 @@ const getAllInventory = catchAsync(async (req, res, next) => {
             },
         });
     } else {
-        if (search !== '' && typeof search !== 'undefined'){
-            searchQuery.where = {'itemName':{}}
-            searchQuery.where['itemName'] = {[Op.iLike]:`%${search}%`}
+        searchQuery.where['deletedAt'] = { [Op.is]: null };
+
+        if (search !== '' && typeof search !== 'undefined') {
+            searchQuery.where['itemName'] = { [Op.iLike]: `%${search}%` }
         }
-        
+
         if (sort !== '' && typeof sort !== 'undefined') {
             if (sort == 'DESC') {
                 order = [['itemName', 'DESC']];
             } else if (sort == 'ASC') {
                 order = [['itemName', 'ASC']];
             }
+        } else {
+            order = [['id', 'ASC']];
         }
 
         if (sort_stock !== '' && typeof sort_stock !== 'undefined') {
@@ -88,6 +99,8 @@ const getAllInventory = catchAsync(async (req, res, next) => {
             } else if (sort_stock == 'ASC') {
                 order = [['quantity', 'ASC']];
             }
+        } else {
+            order = [['id', 'ASC']];
         }
 
         result = await inventory.findAll({
