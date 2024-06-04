@@ -72,16 +72,19 @@ const getLoan = catchAsync(async (req, res, next) => {
     const { limit, page, search } = req.query;
     let result = null;
     let totalData;
-    let searchQuery = {};
+    let searchQuery = {
+        where: {}
+    };
+    let order = [['id', 'ASC']];
 
+    searchQuery.where['deletedAt'] = { [Op.is]: null };
     if (search !== '' && typeof search !== 'undefined'){
-        searchQuery.where = {'itemName':{}}
         searchQuery.where['itemName'] = {[Op.iLike]:`%${search}%`}
     }
 
     if (limit && page) {
         if (req.user.userType === '0') {
-            let queryCount = `SELECT COUNT(*) as total FROM loans`;
+            let queryCount = `SELECT COUNT(*) as total FROM loans WHERE loans."deletedAt" IS NULL`;
 
             result = await loans.findAll({
                 include: [{
@@ -94,10 +97,11 @@ const getLoan = catchAsync(async (req, res, next) => {
                 }],
                 limit: limit,
                 offset: (page - 1) * limit,
+                order: order,
             });
             totalData = await db.query(queryCount, { type: db.QueryTypes.SELECT });
         } else {
-            let queryCount = `SELECT COUNT(*) as total FROM loans WHERE loans."idUser" = ${req.user.id}`;
+            let queryCount = `SELECT COUNT(*) as total FROM loans WHERE loans."idUser" = ${req.user.id} AND loans."deletedAt" IS NULL`;
 
             result = await loans.findAll({
                 where: { idUser: req.user.id },
@@ -111,6 +115,7 @@ const getLoan = catchAsync(async (req, res, next) => {
                 }],
                 limit: limit,
                 offset: (page - 1) * limit,
+                order: order,
             });
             totalData = await db.query(queryCount, { type: db.QueryTypes.SELECT });
         }
@@ -138,6 +143,7 @@ const getLoan = catchAsync(async (req, res, next) => {
                     attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] },
                     where: searchQuery.where
                 }],
+                order: order,
             });
         } else {
             result = await loans.findAll({
@@ -150,6 +156,7 @@ const getLoan = catchAsync(async (req, res, next) => {
                     attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] },
                     where: searchQuery.where
                 }],
+                order: order,
             });
         }
 
@@ -187,6 +194,7 @@ const deleteLoan = catchAsync(async (req, res, next) => {
 const editLoan = catchAsync(async (req, res, next) => {
     const validStatuses = ['Sedang Dipinjam', 'Belum Dikembalikan', 'Sudah Dikembalikan'];
     const checkIdItem = await inventory.findByPk(req.body.idItem);
+
     if (!checkIdItem) {
         throw new ApiError('The Item doesn\'t exist', 400);
     }
@@ -219,7 +227,6 @@ const editLoan = catchAsync(async (req, res, next) => {
         },
         returning: true,
     });
-
 
     if (req.body.status === 'Sudah Dikembalikan') {
         await inventory.update({
