@@ -2,19 +2,35 @@ require('dotenv').config({ path: `${process.cwd()}/.env` });
 
 const express = require('express');
 const cors = require('cors');
-var cron = require('node-cron');
+const https = require('https');
+const fs = require('fs');
+const cron = require('node-cron');
 
 const authRouter = require('./routes/authRoute');
 const inventoryRouter = require('./routes/inventoryRoute');
 const loansRouter = require('./routes/loansRoute');
 
 const catchAsync = require('./utils/catchAsync');
+// const test = require('./certs')
 const ApiError = require('./utils/apiError');
 const globalErrorHandler = require('./controllers/errorController');
 
 const loans = require('./db/models/loans');
 
 const PORT = process.env.APP_PORT || 4000;
+let key;
+let cert;
+if (process.env.NODE_ENV == 'development' || process.env.NODE_ENV == 'test') {
+    key = fs.readFileSync(__dirname + '/certs/apache-selfsigned.key');
+    cert = fs.readFileSync(__dirname + '/certs/apache-selfsigned.crt');
+} else {
+    key = fs.readFileSync(__dirname + '/certs/medinventory-prod.key');
+    cert = fs.readFileSync(__dirname + '/certs/medinventory-prod.crt');
+}
+const options = {
+    key: key,
+    cert: cert
+};
 const corsOptions = {
     origin: function (origin, callback) {
         if (!origin) {
@@ -41,7 +57,6 @@ cron.schedule('0 0 * * *', async () => {
     const today = new Date();
 
     loansData.forEach(async (value, index) => {
-        // console.log(`ID ${value.id}, VALUE ${value.status}, TYPEOF ${value.status}, ISTRUE ${value.status == 'Sedang Dipinjam'}, DATE RETURN ${value.dateReturn}`);
         if (value.dateReturn.getFullYear() < today.getFullYear() ||
             (value.dateReturn.getFullYear() === today.getFullYear() && value.dateReturn.getMonth() < today.getMonth()) ||
             (value.dateReturn.getFullYear() === today.getFullYear() && value.dateReturn.getMonth() === today.getMonth() && value.dateReturn.getDate() < today.getDate())) {
@@ -79,8 +94,10 @@ app.use('*', catchAsync(async () => {
 
 app.use(globalErrorHandler);
 
+var server = https.createServer(options, app);
+
 if (process.env.NODE_ENV !== 'test') {
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
         console.log(`SERVER RUNNING -> ${PORT}`);
     });
 }
