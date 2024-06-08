@@ -11,26 +11,13 @@ const inventoryRouter = require('./routes/inventoryRoute');
 const loansRouter = require('./routes/loansRoute');
 
 const catchAsync = require('./utils/catchAsync');
-// const test = require('./certs')
 const ApiError = require('./utils/apiError');
 const globalErrorHandler = require('./controllers/errorController');
 
 const loans = require('./db/models/loans');
 
 const PORT = process.env.APP_PORT || 4000;
-let key;
-let cert;
-if (process.env.NODE_ENV == 'development' || process.env.NODE_ENV == 'test') {
-    key = fs.readFileSync(__dirname + '/certs/apache-selfsigned.key');
-    cert = fs.readFileSync(__dirname + '/certs/apache-selfsigned.crt');
-} else {
-    key = fs.readFileSync(__dirname + '/certs/medinventory-prod.key');
-    cert = fs.readFileSync(__dirname + '/certs/medinventory-prod.crt');
-}
-const options = {
-    key: key,
-    cert: cert
-};
+let key, cert;
 const corsOptions = {
     origin: function (origin, callback) {
         if (!origin) {
@@ -56,7 +43,7 @@ cron.schedule('0 0 * * *', async () => {
 
     const today = new Date();
 
-    loansData.forEach(async (value, index) => {
+    for (const value of loansData) {
         if (value.dateReturn.getFullYear() < today.getFullYear() ||
             (value.dateReturn.getFullYear() === today.getFullYear() && value.dateReturn.getMonth() < today.getMonth()) ||
             (value.dateReturn.getFullYear() === today.getFullYear() && value.dateReturn.getMonth() === today.getMonth() && value.dateReturn.getDate() < today.getDate())) {
@@ -71,7 +58,7 @@ cron.schedule('0 0 * * *', async () => {
                 });
             }
         }
-    });
+    };
 }, {
     scheduled: true,
     timezone: "Asia/Jakarta"
@@ -80,7 +67,7 @@ cron.schedule('0 0 * * *', async () => {
 app.get('/', (req, res) => {
     res.status(200).json({
         status: 'success',
-        message: 'API RUNNING -> Base Route',
+        message: 'WELCOME TO MEDINVENTORY API',
     });
 });
 
@@ -88,18 +75,32 @@ app.use('/api/auth', authRouter);
 app.use('/api/inventory', inventoryRouter);
 app.use('/api/loans', loansRouter);
 
+if (process.env.NODE_ENV == 'production') {
+    key = fs.readFileSync('/etc/letsencrypt/live/api-medinventory.my.id/privkey.pem');
+    cert = fs.readFileSync('/etc/letsencrypt/live/api-medinventory.my.id/fullchain.pem');
+
+    let server = https.createServer({
+        key: key,
+        cert: cert
+    }, app);
+
+    server.listen(PORT, () => {
+        console.log(`MEDINVENTORY API RUNNING ON PORT ${PORT} WITH ${process.env.NODE_ENV} CONFIGURATION`);
+    });
+} else if (process.env.NODE_ENV == 'development') {
+    app.listen(PORT, () => {
+        console.log(`MEDINVENTORY API RUNNING ON PORT ${PORT} WITH ${process.env.NODE_ENV} CONFIGURATION`);
+    });
+} else if (process.env.NODE_ENV == 'test') {
+    console.log("MEDINVENTORY API IS CURRENTLY RUNNING TEST, NO REQUEST WILL BE ACCEPTED");
+} else {
+    console.log(`ERROR, UNKNOWN ENVIRONMENT: ${process.env.NODE_ENV}`);
+}
+
 app.use('*', catchAsync(async () => {
     throw new ApiError('Error, Route Not Found', 404);
 }));
 
 app.use(globalErrorHandler);
-
-var server = https.createServer(options, app);
-
-if (process.env.NODE_ENV !== 'test') {
-    server.listen(PORT, () => {
-        console.log(`SERVER RUNNING -> ${PORT}`);
-    });
-}
 
 module.exports = app;
