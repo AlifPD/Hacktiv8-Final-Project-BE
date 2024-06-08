@@ -11,26 +11,13 @@ const inventoryRouter = require('./routes/inventoryRoute');
 const loansRouter = require('./routes/loansRoute');
 
 const catchAsync = require('./utils/catchAsync');
-// const test = require('./certs')
 const ApiError = require('./utils/apiError');
 const globalErrorHandler = require('./controllers/errorController');
 
 const loans = require('./db/models/loans');
 
 const PORT = process.env.APP_PORT || 4000;
-let key;
-let cert;
-if (process.env.NODE_ENV == 'development' || process.env.NODE_ENV == 'test') {
-    key = fs.readFileSync(__dirname + '/certs/apache-selfsigned.key');
-    cert = fs.readFileSync(__dirname + '/certs/apache-selfsigned.crt');
-} else {
-    key = fs.readFileSync(__dirname + '/certs/medinventory-prod.key');
-    cert = fs.readFileSync(__dirname + '/certs/medinventory-prod.crt');
-}
-const options = {
-    key: key,
-    cert: cert
-};
+let key, cert, httpsOptions;
 const corsOptions = {
     origin: function (origin, callback) {
         if (!origin) {
@@ -94,11 +81,19 @@ app.use('*', catchAsync(async () => {
 
 app.use(globalErrorHandler);
 
-var server = https.createServer(options, app);
+if (process.env.NODE_ENV == 'production') {
+    key = fs.readFileSync('/etc/letsencrypt/live/api-medinventory.my.id/privkey.pem');
+    cert = fs.readFileSync('/etc/letsencrypt/live/api-medinventory.my.id/fullchain.pem');
+}
+let server = https.createServer(httpsOptions, app);
 
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV == 'production') {
     server.listen(PORT, () => {
-        console.log(`SERVER RUNNING -> ${PORT}`);
+        console.log(`MEDINVENTORY API RUNNING ON PORT ${PORT}`);
+    });
+} else {
+    app.listen(PORT, () => {
+        console.log(`MEDINVENTORY API RUNNING ON PORT ${PORT}`);
     });
 }
 
