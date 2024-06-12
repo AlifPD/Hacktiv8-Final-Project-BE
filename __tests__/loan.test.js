@@ -106,7 +106,145 @@ describe("Loans Controller Testing", () => {
                 expect(res.body.data).toHaveProperty("deletedAt");
             });
         });
-        describe("Failed", () => { });
+        describe("Failed", () => {
+            describe("Bad Request", () => {
+                test("User don't exist", async () => {
+                    const body = {
+                        "idItem": 29,
+                        "idUser": 9999,
+                        "dateLoan": new Date(),
+                        "dateReturn": new Date("2024-06-30T00:09:00.203Z"),
+                        "quantity": 1
+                    }
+
+                    const token = generateToken({ id: 1 })
+
+                    const res = await request(app).post("/api/loans/create").set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+                test("Item don't exist", async () => {
+                    const body = {
+                        "idItem": 9999,
+                        "idUser": 1,
+                        "dateLoan": new Date(),
+                        "dateReturn": new Date("2024-06-30T00:09:00.203Z"),
+                        "quantity": 1
+                    }
+
+                    const token = generateToken({ id: 1 })
+
+                    const res = await request(app).post("/api/loans/create").set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+                test("Loan date is before today", async () => {
+                    const body = {
+                        "idItem": 29,
+                        "idUser": 1,
+                        "dateLoan": new Date("2024-06-01T00:09:00.203Z"),
+                        "dateReturn": new Date("2024-06-30T00:09:00.203Z"),
+                        "quantity": 1
+                    }
+
+                    const token = generateToken({ id: 1 })
+
+                    const res = await request(app).post("/api/loans/create").set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+                test("Return date is before loan date", async () => {
+                    const body = {
+                        "idItem": 29,
+                        "idUser": 1,
+                        "dateLoan": new Date(),
+                        "dateReturn": new Date("2024-06-01T00:09:00.203Z"),
+                        "quantity": 1
+                    }
+
+                    const token = generateToken({ id: 1 })
+
+                    const res = await request(app).post("/api/loans/create").set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+                test("Quantity exceeded item stock", async () => {
+                    const body = {
+                        "idItem": 29,
+                        "idUser": 1,
+                        "dateLoan": new Date(),
+                        "dateReturn": new Date("2024-06-30T00:09:00.203Z"),
+                        "quantity": 999999
+                    }
+
+                    const token = generateToken({ id: 1 })
+
+                    const res = await request(app).post("/api/loans/create").set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+                test("Quantity is 0", async () => {
+                    const body = {
+                        "idItem": 29,
+                        "idUser": 1,
+                        "dateLoan": new Date(),
+                        "dateReturn": new Date("2024-06-30T00:09:00.203Z"),
+                        "quantity": 0
+                    }
+
+                    const token = generateToken({ id: 1 })
+
+                    const res = await request(app).post("/api/loans/create").set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+                test("Quantity is less than 0", async () => {
+                    const body = {
+                        "idItem": 29,
+                        "idUser": 1,
+                        "dateLoan": new Date(),
+                        "dateReturn": new Date("2024-06-30T00:09:00.203Z"),
+                        "quantity": -99
+                    }
+
+                    const token = generateToken({ id: 1 })
+
+                    const res = await request(app).post("/api/loans/create").set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+                test("No User Id Exist in DB", async () => {
+                    const body = {
+                        "idItem": 29,
+                        "idUser": 1,
+                        "dateLoan": new Date(),
+                        "dateReturn": new Date("2024-06-30T00:09:00.203Z"),
+                        "quantity": 1
+                    }
+
+                    const token = generateToken({ id: 9999 })
+
+                    const res = await request(app).post("/api/loans/create").set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+            });
+            describe("Unauthorized", () => {
+                test("No authorization bearer token", async () => {
+                    const body = {
+                        "idItem": 29,
+                        "idUser": 1,
+                        "dateLoan": new Date(),
+                        "dateReturn": new Date("2024-06-30T00:09:00.203Z"),
+                        "quantity": 1
+                    }
+
+                    const res = await request(app).post("/api/loans/create").send(body);
+
+                    expect(res.status).toBe(401);
+                });
+            });
+        });
     });
 
     describe("Get Loan Test", () => {
@@ -308,7 +446,7 @@ describe("Loans Controller Testing", () => {
         describe("Success", () => {
             test("Success Get Loan Detail", async () => {
                 const token = generateToken({ id: 1 })
-                const query = {id: 3}
+                const query = { id: 3 }
 
                 const res = await request(app).get("/api/loans/history/detail").query(query).set('Authorization', `Bearer ${token}`);
 

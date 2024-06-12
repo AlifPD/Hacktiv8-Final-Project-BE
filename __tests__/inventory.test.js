@@ -175,7 +175,7 @@ describe("Inventory Controller Testing", () => {
             test("Success Get All Inventory Items", async () => {
                 const token = generateToken({ id: 1 })
 
-                const res = await request(app).get("/api/inventory//detail/all").set('Authorization', `Bearer ${token}`);
+                const res = await request(app).get("/api/inventory/detail/all").set('Authorization', `Bearer ${token}`);
 
                 expect(res.status).toBe(200);
                 expect(res.body).toBeInstanceOf(Object);
@@ -429,7 +429,24 @@ describe("Inventory Controller Testing", () => {
                 expect(checkSortedPagination).toBe(true);
             });
         });
-        describe("Failed", () => { });
+        describe("Failed", () => {
+            describe("Bad Request", () => {
+                test("No User Id Exist in DB", async () => {
+                    const token = generateToken({ id: 99 })
+
+                    const res = await request(app).get("/api/inventory/detail/all").set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(400);
+                });
+            });
+            describe("Unauthorized", () => {
+                test("No authorization bearer token", async () => {
+                    const res = await request(app).get("/api/inventory/detail/all");
+
+                    expect(res.status).toBe(401);
+                });
+            });
+        });
     });
 
     describe("Get Detail Inventory Test", () => {
@@ -460,7 +477,41 @@ describe("Inventory Controller Testing", () => {
                 expect(res.body.data).toHaveProperty("createdAt");
             });
         });
-        describe("Failed", () => { });
+        describe("Failed", () => {
+            describe("Bad Request", () => {
+                test("No User Id Exist in DB", async () => {
+                    const token = generateToken({ id: 99 })
+
+                    const res = await request(app).get("/api/inventory/detail").set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(400);
+                });
+
+                test("No Item ID Provided", async () => {
+                    const token = generateToken({ id: 1 })
+
+                    const res = await request(app).get("/api/inventory/detail").set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(400)
+                });
+
+                test("Item ID don\'t exist", async () => {
+                    const token = generateToken({ id: 1 })
+                    const query = { id: 999 }
+
+                    const res = await request(app).get("/api/inventory/detail").query(query).set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(400)
+                });
+            });
+            describe("Unauthorized", () => {
+                test("No authorization bearer token", async () => {
+                    const res = await request(app).get("/api/inventory/detail");
+
+                    expect(res.status).toBe(401);
+                });
+            });
+        });
     });
 
     describe("Delete Inventory Test", () => {
@@ -499,7 +550,53 @@ describe("Inventory Controller Testing", () => {
                 expect(resValidateDelete.body).toHaveProperty("message", "Item do not exists in inventory");
             });
         });
-        describe("Failed", () => { });
+        describe("Failed", () => {
+            describe("Bad Request", () => {
+                test("No User Id Exist in DB", async () => {
+                    const token = generateToken({ id: 99 })
+
+                    const res = await request(app).delete("/api/inventory/delete").set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(400);
+                });
+                test("Item don't exist in DB", async () => {
+                    const token = generateToken({ id: 1 })
+                    const query = {
+                        id: 999
+                    }
+
+                    const res = await request(app).delete("/api/inventory/delete").query(query).set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(400);
+                });
+                test("Item already been deleted", async () => {
+                    const token = generateToken({ id: 1 })
+                    const query = {
+                        id: 13
+                    }
+
+                    const res = await request(app).delete("/api/inventory/delete").query(query).set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(400);
+                });
+            });
+            describe("Unauthorized", () => {
+                test("No authorization bearer token", async () => {
+                    const res = await request(app).delete("/api/inventory/delete");
+
+                    expect(res.status).toBe(401);
+                });
+            });
+            describe("Forbidden", () => {
+                test("Authorization bearer token come from non-admin user", async () => {
+                    const token = generateToken({ id: 2 })
+
+                    const res = await request(app).delete("/api/inventory/delete").set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(403);
+                });
+            });
+        });
     });
 
     describe("Edit Inventory Test", () => {
@@ -561,6 +658,80 @@ describe("Inventory Controller Testing", () => {
                 expect(resValidateUpdate.body.data.pictureUrl).toBe(body.pictureUrl);
             });
         });
-        describe("Failed", () => { });
+        describe("Failed", () => {
+            describe("Bad Request", () => {
+                test("No User Id Exist in DB", async () => {
+                    const token = generateToken({ id: 99 })
+                    const query = { id: 42 }
+                    const body = {
+                        "itemName": "testing alat updated",
+                        "quantity": 999,
+                        "category": "alat kesehatan jantung",
+                        "location": "gedung C",
+                        "isAvailable": true,
+                        "description": "Lorem ipsum dolor sit amet consectetur",
+                        "pictureUrl": "https://picsum.photos/seed/picsum/500/500"
+                    }
+
+                    const res = await request(app).put("/api/inventory/update").query(query).set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+                test("Item don't exist in DB", async () => {
+                    const token = generateToken({ id: 1 })
+                    const query = { id: 999 }
+                    const body = {
+                        "itemName": "testing alat updated",
+                        "quantity": 999,
+                        "category": "alat kesehatan jantung",
+                        "location": "gedung C",
+                        "isAvailable": true,
+                        "description": "Lorem ipsum dolor sit amet consectetur",
+                        "pictureUrl": "https://picsum.photos/seed/picsum/500/500"
+                    }
+
+                    const res = await request(app).put("/api/inventory/update").query(query).set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+            });
+            describe("Unauthorized", () => {
+                test("No authorization bearer token", async () => {
+                    const query = { id: 42 }
+                    const body = {
+                        "itemName": "testing alat updated",
+                        "quantity": 999,
+                        "category": "alat kesehatan jantung",
+                        "location": "gedung C",
+                        "isAvailable": true,
+                        "description": "Lorem ipsum dolor sit amet consectetur",
+                        "pictureUrl": "https://picsum.photos/seed/picsum/500/500"
+                    }
+
+                    const res = await request(app).put("/api/inventory/update").query(query).send(body);
+
+                    expect(res.status).toBe(401);
+                });
+            });
+            describe("Forbidden", () => {
+                test("Authorization bearer token come from non-admin user", async () => {
+                    const token = generateToken({ id: 2 })
+                    const query = { id: 42 }
+                    const body = {
+                        "itemName": "testing alat updated",
+                        "quantity": 999,
+                        "category": "alat kesehatan jantung",
+                        "location": "gedung C",
+                        "isAvailable": true,
+                        "description": "Lorem ipsum dolor sit amet consectetur",
+                        "pictureUrl": "https://picsum.photos/seed/picsum/500/500"
+                    }
+
+                    const res = await request(app).put("/api/inventory/update").query(query).set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(403);
+                });
+            });
+        });
     });
 });
