@@ -12,5 +12,19 @@
         "email": "usertest1@mail.com",
         "password": "usertest1111",
         "phoneNumber": "08953545631"
+    },
+    {
+        "userType": "1",
+        "userName": "usertest2",
+        "phoneNumber": "346534534",
+        "email": "usertest2@mail.com",
+        "password": "usertest2222"
+    },
+    {
+        "userType": "1",
+        "userName": "usertest3",
+        "phoneNumber": "563573856",
+        "email": "usertest3@mail.com",
+        "password": "usertest3333"
     }
 ]
