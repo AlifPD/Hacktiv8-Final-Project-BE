@@ -111,7 +111,7 @@ const getAllInventory = catchAsync(async (req, res, next) => {
 
 const getDetailInventory = catchAsync(async (req, res, next) => {
     if (!req.query.id) {
-        throw new ApiError("Id don\'t exist", 400);
+        throw new ApiError("Item ID not provided", 400);
     }
 
     const result = await inventory.findByPk(req.query.id);
@@ -135,7 +135,7 @@ const deleteInventoryItem = catchAsync(async (req, res, next) => {
         returning: true,
     });
 
-    if (!result) {
+    if (!result || result.length == 0) {
         throw new ApiError('Data don\'t exists or Already been deleted', 400);
     }
 
@@ -161,8 +161,8 @@ const editInventoryItem = catchAsync(async (req, res, next) => {
         returning: true,
     });
 
-    if (!result) {
-        throw new ApiError('Data don\'t exists or Already been deleted', 400);
+    if (!result || result[1].length == 0) {
+        throw new ApiError('Data don\'t exists', 400);
     }
 
     res.status(200).json({

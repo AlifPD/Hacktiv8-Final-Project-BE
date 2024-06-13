@@ -260,7 +260,7 @@ describe("Auth Controller Testing", () => {
 
                 test("No Id Exist in DB", async () => {
                     const query = {
-                        id: 5
+                        id: 99
                     }
                     const token = generateToken({ id: 1 })
 
@@ -273,7 +273,7 @@ describe("Auth Controller Testing", () => {
                     const query = {
                         id: 1
                     }
-                    const token = generateToken({ id: 5 })
+                    const token = generateToken({ id: 99 })
 
                     const res = await request(app).get("/api/auth/detail").query(query).set('Authorization', `Bearer ${token}`);
 

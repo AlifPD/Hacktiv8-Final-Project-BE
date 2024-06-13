@@ -172,6 +172,29 @@ const getLoan = catchAsync(async (req, res, next) => {
     }
 });
 
+const getLoanDetail = catchAsync(async (req, res, next) => {
+    const result = await loans.findAll({
+        where: { id: req.query.id },
+        include: [{
+            model: users,
+            attributes: { exclude: ['password', 'createdAt', 'updatedAt', 'deletedAt'] },
+        }, {
+            model: inventory,
+            attributes: { exclude: ['createdAt', 'updatedAt', 'deletedAt'] }
+        }],
+    });
+
+    if (!result || result.length == 0) {
+        throw new ApiError('No Loan Data Existed', 400);
+    }
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Successfully get loan detail',
+        data: result
+    });
+});
+
 const deleteLoan = catchAsync(async (req, res, next) => {
     const result = await loans.destroy({
         where: {
@@ -180,7 +203,7 @@ const deleteLoan = catchAsync(async (req, res, next) => {
         returning: true,
     });
 
-    if (!result) {
+    if (!result || result.length == 0) {
         throw new ApiError('Data don\'t exists or Already been deleted', 400);
     }
 
@@ -230,7 +253,7 @@ const editLoan = catchAsync(async (req, res, next) => {
         },
         returning: true,
     });
-    if (!result) {
+    if (!result || result.length == 0) {
         throw new ApiError("Loans does not exists or have been deleted", 400);
     };
 
@@ -251,4 +274,4 @@ const editLoan = catchAsync(async (req, res, next) => {
     });
 });
 
-module.exports = { createNewLoan, getLoan, deleteLoan, editLoan };
+module.exports = { createNewLoan, getLoan, deleteLoan, editLoan, getLoanDetail };
