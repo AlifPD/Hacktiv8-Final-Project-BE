@@ -184,7 +184,7 @@ const getLoanDetail = catchAsync(async (req, res, next) => {
         }],
     });
 
-    if (!result) {
+    if (!result || result.length == 0) {
         throw new ApiError('No Loan Data Existed', 400);
     }
 
@@ -203,7 +203,7 @@ const deleteLoan = catchAsync(async (req, res, next) => {
         returning: true,
     });
 
-    if (!result) {
+    if (!result || result.length == 0) {
         throw new ApiError('Data don\'t exists or Already been deleted', 400);
     }
 
@@ -253,7 +253,7 @@ const editLoan = catchAsync(async (req, res, next) => {
         },
         returning: true,
     });
-    if (!result) {
+    if (!result || result.length == 0) {
         throw new ApiError("Loans does not exists or have been deleted", 400);
     };
 

@@ -249,7 +249,7 @@ describe("Loans Controller Testing", () => {
 
     describe("Get Loan Test", () => {
         describe("Success", () => {
-            test("Success Get All Loans", async () => {
+            test("Success Get All Loans - Admin", async () => {
                 const token = generateToken({ id: 1 })
 
                 const res = await request(app).get("/api/loans/history").set('Authorization', `Bearer ${token}`);
@@ -292,8 +292,102 @@ describe("Loans Controller Testing", () => {
                     expect(item.inventory).toHaveProperty("pictureUrl");
                 });
             });
-            test("Success Get All Loans with Pagination", async () => {
+            test("Success Get All Loans - User", async () => {
+                const token = generateToken({ id: 2 })
+
+                const res = await request(app).get("/api/loans/history").set('Authorization', `Bearer ${token}`);
+
+                expect(res.status).toBe(200);
+                expect(res.body).toBeInstanceOf(Object);
+
+                expect(res.body).toHaveProperty("status", "success");
+                expect(res.body).toHaveProperty("message", "Successfully get all loans");
+                expect(res.body).toHaveProperty("data");
+
+                expect(res.body.data).toBeInstanceOf(Array);
+                res.body.data.forEach((item) => {
+                    expect(item).toHaveProperty("id");
+                    expect(item).toHaveProperty("idItem");
+                    expect(item).toHaveProperty("idUser");
+                    expect(item).toHaveProperty("dateLoan");
+                    expect(item).toHaveProperty("dateReturn");
+                    expect(item).toHaveProperty("status");
+                    expect(item).toHaveProperty("quantity");
+                    expect(item).toHaveProperty("updatedAt");
+                    expect(item).toHaveProperty("createdAt");
+                    expect(item).toHaveProperty("deletedAt");
+
+                    expect(item).toHaveProperty("user");
+                    expect(item.user).toHaveProperty("id");
+                    expect(item.user).toHaveProperty("userType");
+                    expect(item.user).toHaveProperty("userName");
+                    expect(item.user).toHaveProperty("phoneNumber");
+                    expect(item.user).toHaveProperty("email");
+
+                    expect(item).toHaveProperty("inventory");
+                    expect(item.inventory).toHaveProperty("id");
+                    expect(item.inventory).toHaveProperty("isAvailable");
+                    expect(item.inventory).toHaveProperty("itemName");
+                    expect(item.inventory).toHaveProperty("quantity");
+                    expect(item.inventory).toHaveProperty("category");
+                    expect(item.inventory).toHaveProperty("location");
+                    expect(item.inventory).toHaveProperty("description");
+                    expect(item.inventory).toHaveProperty("pictureUrl");
+                });
+            });
+            test("Success Get All Loans with Pagination - Admin", async () => {
                 const token = generateToken({ id: 1 })
+                const query = {
+                    limit: 5,
+                    page: 1
+                }
+
+                const res = await request(app).get("/api/loans/history").query(query).set('Authorization', `Bearer ${token}`);
+
+                expect(res.status).toBe(200);
+
+                expect(res.body).toBeInstanceOf(Object);
+                expect(res.body).toHaveProperty("status", "success");
+                expect(res.body).toHaveProperty("message", `Successfully get all loans, page ${query.page}`);
+                expect(res.body).toHaveProperty("data");
+
+                expect(res.body.data).toHaveProperty("total");
+                expect(res.body.data).toHaveProperty("result");
+
+                expect(res.body.data.result).toBeInstanceOf(Array);
+
+                res.body.data.result.forEach((item) => {
+                    expect(item).toHaveProperty("id");
+                    expect(item).toHaveProperty("idItem");
+                    expect(item).toHaveProperty("idUser");
+                    expect(item).toHaveProperty("dateLoan");
+                    expect(item).toHaveProperty("dateReturn");
+                    expect(item).toHaveProperty("status");
+                    expect(item).toHaveProperty("quantity");
+                    expect(item).toHaveProperty("updatedAt");
+                    expect(item).toHaveProperty("createdAt");
+                    expect(item).toHaveProperty("deletedAt");
+
+                    expect(item).toHaveProperty("user");
+                    expect(item.user).toHaveProperty("id");
+                    expect(item.user).toHaveProperty("userType");
+                    expect(item.user).toHaveProperty("userName");
+                    expect(item.user).toHaveProperty("phoneNumber");
+                    expect(item.user).toHaveProperty("email");
+
+                    expect(item).toHaveProperty("inventory");
+                    expect(item.inventory).toHaveProperty("id");
+                    expect(item.inventory).toHaveProperty("isAvailable");
+                    expect(item.inventory).toHaveProperty("itemName");
+                    expect(item.inventory).toHaveProperty("quantity");
+                    expect(item.inventory).toHaveProperty("category");
+                    expect(item.inventory).toHaveProperty("location");
+                    expect(item.inventory).toHaveProperty("description");
+                    expect(item.inventory).toHaveProperty("pictureUrl");
+                });
+            });
+            test("Success Get All Loans with Pagination - User", async () => {
+                const token = generateToken({ id: 2 })
                 const query = {
                     limit: 5,
                     page: 1
@@ -439,7 +533,24 @@ describe("Loans Controller Testing", () => {
                 });
             });
         });
-        describe("Failed", () => { });
+        describe("Failed", () => {
+            describe("Bad Request", () => {
+                test("No User Id Exist in DB", async () => {
+                    const token = generateToken({ id: 9999 })
+
+                    const res = await request(app).get("/api/loans/history").set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(400);
+                });
+            });
+            describe("Unauthorized", () => {
+                test("No authorization bearer token", async () => {
+                    const res = await request(app).get("/api/loans/history");
+
+                    expect(res.status).toBe(401);
+                });
+            });
+        });
     });
 
     describe("Get Loan Detail Test", () => {
@@ -490,7 +601,33 @@ describe("Loans Controller Testing", () => {
                 });
             });
         });
-        describe("Failed", () => { });
+        describe("Failed", () => {
+            describe("Bad Request", () => {
+                test("No User Id Exist in DB", async () => {
+                    const token = generateToken({ id: 9999 })
+                    const query = { id: 1 }
+
+                    const res = await request(app).get("/api/loans/history/detail").query(query).set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(400);
+                });
+                test("No Loan data existed", async () => {
+                    const token = generateToken({ id: 1 })
+                    const query = { id: 9999999 }
+
+                    const res = await request(app).get("/api/loans/history/detail").query(query).set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(400);
+                });
+            });
+            describe("Unauthorized", () => {
+                test("No authorization bearer token", async () => {
+                    const res = await request(app).get("/api/loans/history/detail");
+
+                    expect(res.status).toBe(401);
+                });
+            });
+        });
     });
 
     describe("Delete Loan Test", () => {
@@ -529,7 +666,53 @@ describe("Loans Controller Testing", () => {
                 expect(checkLoanDeleted).toBe(false)
             });
         });
-        describe("Failed", () => { });
+        describe("Failed", () => {
+            describe("Bad Request", () => {
+                test("No User Id Exist in DB", async () => {
+                    const token = generateToken({ id: 99 })
+
+                    const res = await request(app).delete("/api/loans/delete").set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(400);
+                });
+                test("Loan don't exist in DB", async () => {
+                    const token = generateToken({ id: 1 })
+                    const query = {
+                        id: 999
+                    }
+
+                    const res = await request(app).delete("/api/loans/delete").query(query).set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(400);
+                });
+                test("Item already been deleted", async () => {
+                    const token = generateToken({ id: 1 })
+                    const query = {
+                        id: 7
+                    }
+
+                    const res = await request(app).delete("/api/loans/delete").query(query).set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(400);
+                });
+            });
+            describe("Unauthorized", () => {
+                test("No authorization bearer token", async () => {
+                    const res = await request(app).delete("/api/loans/delete");
+
+                    expect(res.status).toBe(401);
+                });
+            });
+            describe("Forbidden", () => {
+                test("Authorization bearer token come from non-admin user", async () => {
+                    const token = generateToken({ id: 2 })
+
+                    const res = await request(app).delete("/api/loans/delete").set('Authorization', `Bearer ${token}`);
+
+                    expect(res.status).toBe(403);
+                });
+            });
+        });
     });
 
     describe("Edit Loan Test", () => {
@@ -581,6 +764,110 @@ describe("Loans Controller Testing", () => {
                 expect(resValidateUpdate.body.data[0].status).toBe(body.status);
             });
         });
-        describe("Failed", () => { });
+        describe("Failed", () => {
+            describe("Bad Request", () => {
+                test("No User Id Exist in DB", async () => {
+                    const token = generateToken({ id: 99 })
+                    const query = { id: 9 }
+                    const body = {
+                        "idItem": 37,
+                        "status": "Sudah Dikembalikan"
+                    }
+
+                    const res = await request(app).put("/api/loans/update").query(query).set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+                test("No status provided", async () => {
+                    const token = generateToken({ id: 1 })
+                    const query = { id: 9 }
+                    const body = {
+                        "idItem": 37,
+                        // "status": "Sudah Dikembalikan"
+                    }
+
+                    const res = await request(app).put("/api/loans/update").query(query).set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+                test("Status invalid", async () => {
+                    const token = generateToken({ id: 1 })
+                    const query = { id: 9 }
+                    const body = {
+                        "idItem": 37,
+                        "status": "test test"
+                    }
+
+                    const res = await request(app).put("/api/loans/update").query(query).set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+                test("No idPinjaman provided", async () => {
+                    const token = generateToken({ id: 1 })
+                    const query = {}
+                    const body = {
+                        "idItem": 37,
+                        "status": "Sudah Dikembalikan"
+                    }
+
+                    const res = await request(app).put("/api/loans/update").query(query).set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+                test("Loan don't exist", async () => {
+                    const token = generateToken({ id: 1 })
+                    const query = { id: 9999 }
+                    const body = {
+                        "idItem": 37,
+                        "status": "Sudah Dikembalikan"
+                    }
+
+                    const res = await request(app).put("/api/loans/update").query(query).set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+                test("Item don't exist", async () => {
+                    const token = generateToken({ id: 1 })
+                    const query = { id: 9 }
+                    const body = {
+                        "idItem": 9999,
+                        "status": "Sudah Dikembalikan"
+                    }
+
+                    const res = await request(app).put("/api/loans/update").query(query).set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(400);
+                });
+                // test("", () => {});
+            });
+            describe("Unauthorized", () => {
+                test("No authorization bearer token", async () => {
+                    const token = generateToken({ id: 1 })
+                    const query = { id: 9 }
+                    const body = {
+                        "idItem": 37,
+                        "status": "Sudah Dikembalikan"
+                    }
+
+                    const res = await request(app).put("/api/loans/update").query(query).send(body);
+
+                    expect(res.status).toBe(401);
+                });
+            });
+            describe("Forbidden", () => {
+                test("Authorization bearer token come from non-admin user", async () => {
+                    const token = generateToken({ id: 2 })
+                    const query = { id: 9 }
+                    const body = {
+                        "idItem": 37,
+                        "status": "Sudah Dikembalikan"
+                    }
+
+                    const res = await request(app).put("/api/loans/update").query(query).set('Authorization', `Bearer ${token}`).send(body);
+
+                    expect(res.status).toBe(403);
+                });
+            });
+        });
     });
 });
