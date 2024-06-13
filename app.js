@@ -33,36 +33,38 @@ const app = express();
 app.use(express.json());
 app.use(cors(corsOptions));
 
-cron.schedule('0 0 * * *', async () => {
-    console.log("HIT MIDNIGHT");
-    let loansData = await loans.findAll({
-        where: {
-            deletedAt: null,
-        }
-    });
-
-    const today = new Date();
-
-    for (const value of loansData) {
-        if (value.dateReturn.getFullYear() < today.getFullYear() ||
-            (value.dateReturn.getFullYear() === today.getFullYear() && value.dateReturn.getMonth() < today.getMonth()) ||
-            (value.dateReturn.getFullYear() === today.getFullYear() && value.dateReturn.getMonth() === today.getMonth() && value.dateReturn.getDate() < today.getDate())) {
-            if (value.status == 'Sedang Dipinjam') {
-                await loans.update({
-                    status: "Belum Dikembalikan"
-                }, {
-                    where: {
-                        id: value.id
-                    },
-                    returning: true,
-                });
+if (process.env.NODE_ENV !== 'test') {
+    cron.schedule('0 0 * * *', async () => {
+        console.log("HIT MIDNIGHT");
+        let loansData = await loans.findAll({
+            where: {
+                deletedAt: null,
             }
-        }
-    };
-}, {
-    scheduled: true,
-    timezone: "Asia/Jakarta"
-});
+        });
+
+        const today = new Date();
+
+        for (const value of loansData) {
+            if (value.dateReturn.getFullYear() < today.getFullYear() ||
+                (value.dateReturn.getFullYear() === today.getFullYear() && value.dateReturn.getMonth() < today.getMonth()) ||
+                (value.dateReturn.getFullYear() === today.getFullYear() && value.dateReturn.getMonth() === today.getMonth() && value.dateReturn.getDate() < today.getDate())) {
+                if (value.status == 'Sedang Dipinjam') {
+                    await loans.update({
+                        status: "Belum Dikembalikan"
+                    }, {
+                        where: {
+                            id: value.id
+                        },
+                        returning: true,
+                    });
+                }
+            }
+        };
+    }, {
+        scheduled: true,
+        timezone: "Asia/Jakarta"
+    });
+}
 
 app.get('/', (req, res) => {
     res.status(200).json({

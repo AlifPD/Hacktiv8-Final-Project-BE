@@ -28,7 +28,7 @@ const returnErrorProd = (error, res) => {
 
     console.log(error.name, error.message, stack);
 
-    return res.status(500).json({
+    res.status(500).json({
         status: 'Error',
         message: 'Internal Server Error',
     });
@@ -45,10 +45,15 @@ const globalErrorHandler = (error, req, res, next) => {
         error = new ApiError('Invalid Token', 401);
     }
 
+    if(process.env.NODE_ENV === 'test'){
+        returnErrorDev(error, res);
+        return returnErrorProd(error, res);
+    }
+
     if (process.env.NODE_ENV === 'development') {
         return returnErrorDev(error, res);
     }
-    returnErrorProd(error, res);
+    return returnErrorProd(error, res);
 }
 
 module.exports = globalErrorHandler;
